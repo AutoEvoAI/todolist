@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌟 Superaihuman Todo List</title>
+    <title>🌟 Star Todo Pro</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
         * { box-sizing: border-box; }
@@ -13,6 +13,8 @@
         @keyframes stars { to { transform: translateY(50px); } }
         .container { max-width: 700px; margin: 0 auto; }
         h1 { text-align: center; font-size: 2.2em; margin-bottom: 8px; text-shadow: 0 0 20px #4facfe; }
+        .lang-toggle { position: fixed; top: 20px; right: 20px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-family: 'Poppins', sans-serif; transition: all 0.3s; z-index: 100; }
+        .lang-toggle:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
         .subtitle { text-align: center; opacity: 0.8; margin-bottom: 24px; font-size: 1.1em; }
         .stats { display: flex; gap: 20px; justify-content: center; margin-bottom: 16px; font-size: 0.95em; opacity: 0.9; flex-wrap: wrap; }
         .stat-item { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 20px; }
@@ -57,42 +59,117 @@
     </style>
 </head>
 <body>
+    <button class="lang-toggle" onclick="toggleLanguage()">🌐 <span id="lang-label">EN</span></button>
     <div class="container">
-        <h1>🌟 星空Todo Pro</h1>
-        <p class="subtitle">专注25min，征服今日</p>
+        <h1>🌟 <span data-i18n="title">Star Todo Pro</span></h1>
+        <p class="subtitle" data-i18n="subtitle">Focus 25min, conquer today</p>
         <div class="stats">
-            <div class="stat-item">总番茄 <span id="total-pomos">0</span></div>
-            <div class="stat-item today-stat">今日 <span id="today-pomos">0</span></div>
+            <div class="stat-item"><span data-i18n="totalPomos">Total Pomos</span> <span id="total-pomos">0</span></div>
+            <div class="stat-item today-stat"><span data-i18n="today">Today</span> <span id="today-pomos">0</span></div>
         </div>
 
         <div id="pomodoro">
             <div id="timer">25:00</div>
             <div id="pomo-task-info" style="display:none;"></div>
-            <div id="pomo-status">就绪</div>
+            <div id="pomo-status" data-i18n="ready">Ready</div>
             <div id="pomo-controls">
-                <button id="start-pomo" onclick="startTopPomodoro()">开始</button>
-                <button id="pause-pomo" onclick="pausePomodoro()" style="display:none;">暂停</button>
-                <button id="reset-pomo" onclick="resetPomodoro()">重置</button>
+                <button id="start-pomo" onclick="startTopPomodoro()" data-i18n="start">Start</button>
+                <button id="pause-pomo" onclick="pausePomodoro()" style="display:none;" data-i18n="pause">Pause</button>
+                <button id="reset-pomo" onclick="resetPomodoro()" data-i18n="reset">Reset</button>
             </div>
         </div>
 
         <div class="input-group">
-            <input type="text" id="new-task" placeholder="输入今日任务，按Enter添加 ✨" autofocus>
-            <button onclick="addTask()">添加</button>
+            <input type="text" id="new-task" data-i18n-placeholder="inputPlaceholder" autofocus>
+            <button onclick="addTask()" data-i18n="add">Add</button>
         </div>
 
         <div class="section" id="pending">
-            <h2>待完成</h2>
+            <h2 data-i18n="pending">Pending</h2>
             <ul id="pending-list"></ul>
         </div>
 
         <div class="section">
-            <h2 id="completed-title">已完成</h2>
+            <h2 id="completed-title" data-i18n="completed">Completed</h2>
             <ul id="completed-list"></ul>
         </div>
     </div>
 
     <script>
+        const translations = {
+            en: {
+                title: 'Star Todo Pro',
+                subtitle: 'Focus 25min, conquer today',
+                totalPomos: 'Total Pomos',
+                today: 'Today',
+                ready: 'Ready',
+                start: 'Start',
+                pause: 'Pause',
+                reset: 'Reset',
+                add: 'Add',
+                inputPlaceholder: 'Enter task, press Enter to add ✨',
+                pending: 'Pending',
+                completed: 'Completed',
+                focusing: 'Focusing',
+                paused: 'Paused',
+                completed_: 'Done!',
+                addTaskFirst: 'Please add a task first!',
+                confirmSwitch: 'Timer running, switching will stop it?',
+                pomoComplete: '🎉 Pomodoro complete! Take a 5min break',
+                loadFailed: 'Failed to load data, using defaults'
+            },
+            zh: {
+                title: '星空Todo Pro',
+                subtitle: '专注25min，征服今日',
+                totalPomos: '总番茄',
+                today: '今日',
+                ready: '就绪',
+                start: '开始',
+                pause: '暂停',
+                reset: '重置',
+                add: '添加',
+                inputPlaceholder: '输入今日任务，按Enter添加 ✨',
+                pending: '待完成',
+                completed: '已完成',
+                focusing: '专注中',
+                paused: '已暂停',
+                completed_: '完成！',
+                addTaskFirst: '请先添加任务！',
+                confirmSwitch: '当前番茄钟运行中，切换任务将停止计时？',
+                pomoComplete: '🎉 番茄钟完成！休息5分钟',
+                loadFailed: '加载数据失败，使用默认值'
+            }
+        };
+
+        let currentLang = localStorage.getItem('lang') || (navigator.language.startsWith('zh') ? 'zh' : 'en');
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            localStorage.setItem('lang', currentLang);
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            document.getElementById('lang-label').textContent = currentLang === 'en' ? 'EN' : '中';
+            document.documentElement.lang = currentLang;
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                el.textContent = translations[currentLang][key];
+            });
+            
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.dataset.i18nPlaceholder;
+                el.placeholder = translations[currentLang][key];
+            });
+
+            updateCounters();
+        }
+
+        function t(key) {
+            return translations[currentLang][key] || key;
+        }
+
         const pendingList = document.getElementById('pending-list');
         const completedList = document.getElementById('completed-list');
         const newTaskInput = document.getElementById('new-task');
@@ -178,7 +255,7 @@
                 } else {
                     const firstTask = pendingList.querySelector('li');
                     if (!firstTask) {
-                        alert('请先添加任务！');
+                        alert(t('addTaskFirst'));
                         return;
                     }
                     taskId = firstTask.dataset.text;
@@ -186,7 +263,7 @@
             }
 
             if (isRunning && currentTaskId !== taskId) {
-                if (!confirm('当前番茄钟运行中，切换任务将停止计时？')) {
+                if (!confirm(t('confirmSwitch'))) {
                     return;
                 }
                 resetPomodoro();
@@ -204,7 +281,7 @@
             isRunning = true;
             startBtn.style.display = 'none';
             pauseBtn.style.display = 'inline-block';
-            statusEl.textContent = '专注中';
+            statusEl.textContent = t('focusing');
 
             disableOtherTaskButtons(taskId);
 
@@ -223,10 +300,10 @@
                     updateTotalPomos();
                     startBtn.style.display = 'inline-block';
                     pauseBtn.style.display = 'none';
-                    statusEl.textContent = '完成！';
+                    statusEl.textContent = t('completed_');
                     pomoTaskInfo.style.display = 'none';
                     enableAllTaskButtons();
-                    notify('🎉 番茄钟完成！休息5分钟');
+                    notify(t('pomoComplete'));
                     if (currentTaskId) {
                         pomoTime[currentTaskId] = (pomoTime[currentTaskId] || 0) + 25 * 60;
                         updateTaskTimeDisplay(currentTaskId);
@@ -240,7 +317,7 @@
             if (timerInterval) clearInterval(timerInterval);
             startBtn.style.display = 'inline-block';
             pauseBtn.style.display = 'none';
-            statusEl.textContent = '已暂停';
+            statusEl.textContent = t('paused');
             enableAllTaskButtons();
         }
 
@@ -252,7 +329,7 @@
             updateTimerDisplay();
             startBtn.style.display = 'inline-block';
             pauseBtn.style.display = 'none';
-            statusEl.textContent = '就绪';
+            statusEl.textContent = t('ready');
             pomoTaskInfo.style.display = 'none';
             document.querySelectorAll('li').forEach(li => li.classList.remove('running'));
             enableAllTaskButtons();
@@ -267,8 +344,8 @@
         }
 
         function updateCounters() {
-            document.querySelector('#pending h2').textContent = `待完成 (${pendingList.children.length})`;
-            document.getElementById('completed-title').textContent = `已完成 (${completedList.children.length})`;
+            document.querySelector('#pending h2').textContent = `${t('pending')} (${pendingList.children.length})`;
+            document.getElementById('completed-title').textContent = `${t('completed')} (${completedList.children.length})`;
         }
 
         function loadTasks() {
@@ -292,7 +369,7 @@
                     }
                 });
             } catch (e) {
-                console.log('加载数据失败，使用默认值');
+                console.log(t('loadFailed'));
             }
             updateCounters();
         }
@@ -418,6 +495,7 @@
 
         // 页面加载完成
         window.addEventListener('load', function() {
+            applyLanguage();
             loadTasks();
             updateTimerDisplay();
             newTaskInput.focus();
