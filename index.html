@@ -1,0 +1,427 @@
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌟 Superaihuman Todo List</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        * { box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; padding: 20px; min-height: 100vh; background: linear-gradient(135deg, #0c0c1e 0%, #1a1a3a 50%, #2d1b69 100%); color: #fff; overflow-x: hidden; position: relative; }
+        body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(2px 2px at 20px 30px, #eee, transparent), radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent), radial-gradient(1px 1px at 90px 40px, #fff, transparent), radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.6), transparent); background-repeat: repeat; background-size: 200px 100px; animation: stars 20s linear infinite; z-index: -1; }
+        @keyframes stars { to { transform: translateY(50px); } }
+        .container { max-width: 700px; margin: 0 auto; }
+        h1 { text-align: center; font-size: 2.2em; margin-bottom: 8px; text-shadow: 0 0 20px #4facfe; }
+        .subtitle { text-align: center; opacity: 0.8; margin-bottom: 24px; font-size: 1.1em; }
+        .stats { display: flex; gap: 20px; justify-content: center; margin-bottom: 16px; font-size: 0.95em; opacity: 0.9; flex-wrap: wrap; }
+        .stat-item { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 20px; }
+        .today-stat { background: rgba(76,175,80,0.3) !important; box-shadow: 0 4px 12px rgba(76,175,80,0.3); }
+        .input-group, #pomodoro { background: rgba(255,255,255,0.12); backdrop-filter: blur(15px); border-radius: 20px; padding: 12px 20px; margin-bottom: 28px; border: 1px solid rgba(255,255,255,0.25); display: flex; align-items: center; gap: 12px; height: 56px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+        #new-task { flex: 1; padding: 12px 16px; border: none; border-radius: 16px; font-size: 15px; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); color: white; font-weight: 500; }
+        #new-task::placeholder { color: rgba(255,255,255,0.6); }
+        #new-task:focus { outline: none; box-shadow: 0 0 20px rgba(79,172,254,0.5); }
+        #timer { font-size: 1.5em; font-weight: 600; color: #00f2fe; margin: 0; padding: 4px 12px; border-radius: 12px; background: rgba(0,242,254,0.2); min-width: 70px; text-align: center; box-shadow: 0 4px 12px rgba(0,242,254,0.3); }
+        #pomo-status { font-size: 14px; font-weight: 500; margin: 0; padding: 4px 8px; background: rgba(255,255,255,0.1); border-radius: 8px; min-width: 50px; opacity: 0.9; }
+        #pomo-task-info { font-size: 13px; font-weight: 500; padding: 4px 8px; background: rgba(255,255,255,0.15); border-radius: 8px; opacity: 0.95; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #pomo-controls { display: flex; gap: 6px; margin-left: auto; }
+        #pomo-controls button { padding: 8px 14px; border-radius: 14px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: all 0.3s; min-height: 36px; line-height: 1.2; }
+        #start-pomo { background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; box-shadow: 0 4px 12px rgba(79,172,254,0.4); }
+        #start-pomo:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(79,172,254,0.6); }
+        #pause-pomo, #reset-pomo { background: linear-gradient(135deg, #ff8e8e, #ff6b6b); color: white; box-shadow: 0 4px 12px rgba(255,107,107,0.4); }
+        #pause-pomo:hover:not(:disabled), #reset-pomo:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(255,107,107,0.6); }
+        button:disabled { opacity: 0.5; cursor: not-allowed !important; }
+        .section { margin-bottom: 32px; }
+        h2 { font-size: 1.6em; margin-bottom: 16px; display: flex; align-items: center; }
+        h2::before { content: '✨'; margin-right: 10px; font-size: 1.4em; }
+        #pending h2::before { color: #4facfe; }
+        #completed-title h2::before { color: #ff6b6b; }
+        ul { list-style: none; padding: 0; max-height: 400px; overflow-y: auto; }
+        li { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); margin: 12px 0; padding: 18px; border-radius: 18px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s; cursor: pointer; }
+        li:hover { transform: translateX(8px); box-shadow: 0 8px 25px rgba(0,0,0,0.25); }
+        .task-index { font-weight: 600; color: #4facfe; font-size: 1.1em; margin-right: 12px; min-width: 24px; }
+        .task-text { flex: 1; font-size: 1em; font-weight: 400; margin-left: 8px; }
+        .task-actions { display: flex; align-items: center; gap: 8px; }
+        .pomo-time { color: #00f2fe; font-weight: 600; font-size: 0.9em; padding: 4px 10px; background: rgba(0,242,254,0.2); border-radius: 12px; }
+        .running { background: rgba(255,193,7,0.25) !important; box-shadow: 0 0 25px rgba(255,193,7,0.5) !important; animation: glow 1s ease-in-out infinite alternate; }
+        @keyframes glow { from { box-shadow: 0 0 20px rgba(255,193,7,0.4); } to { box-shadow: 0 0 35px rgba(255,193,7,0.7); } }
+        .completed-task { opacity: 0.65; }
+        .delete-btn { background: rgba(255,107,107,0.8); padding: 6px 12px; border-radius: 12px; font-size: 12px; transition: all 0.3s; cursor: pointer; border: none; color: white; }
+        .delete-btn:hover { background: #ff6b6b; transform: scale(1.08); }
+        .pomo-btn, .complete-btn { background: rgba(79,172,254,0.8); padding: 8px 14px; border-radius: 14px; color: white; border: none; cursor: pointer; transition: all 0.3s; font-size: 14px; font-weight: 500; }
+        .pomo-btn:hover:not(:disabled), .complete-btn:hover:not(:disabled) { background: #4facfe; transform: scale(1.05); }
+        ul::-webkit-scrollbar { width: 6px; }
+        ul::-webkit-scrollbar-track { background: rgba(255,255,255,0.08); border-radius: 10px; }
+        ul::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 10px; }
+        ul::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.5); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌟 星空Todo Pro</h1>
+        <p class="subtitle">专注25min，征服今日</p>
+        <div class="stats">
+            <div class="stat-item">总番茄 <span id="total-pomos">0</span></div>
+            <div class="stat-item today-stat">今日 <span id="today-pomos">0</span></div>
+        </div>
+
+        <div id="pomodoro">
+            <div id="timer">25:00</div>
+            <div id="pomo-task-info" style="display:none;"></div>
+            <div id="pomo-status">就绪</div>
+            <div id="pomo-controls">
+                <button id="start-pomo" onclick="startTopPomodoro()">开始</button>
+                <button id="pause-pomo" onclick="pausePomodoro()" style="display:none;">暂停</button>
+                <button id="reset-pomo" onclick="resetPomodoro()">重置</button>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="new-task" placeholder="输入今日任务，按Enter添加 ✨" autofocus>
+            <button onclick="addTask()">添加</button>
+        </div>
+
+        <div class="section" id="pending">
+            <h2>待完成</h2>
+            <ul id="pending-list"></ul>
+        </div>
+
+        <div class="section">
+            <h2 id="completed-title">已完成</h2>
+            <ul id="completed-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        const pendingList = document.getElementById('pending-list');
+        const completedList = document.getElementById('completed-list');
+        const newTaskInput = document.getElementById('new-task');
+        const totalPomosEl = document.getElementById('total-pomos');
+        const todayPomosEl = document.getElementById('today-pomos');
+        const pomoTaskInfo = document.getElementById('pomo-task-info');
+
+        let timeLeft = 25 * 60;
+        let isRunning = false;
+        let timerInterval = null;
+        let currentTaskId = null;
+        let nextIndex = 1;
+        let totalPomos = 0;
+        let todayPomos = 0;
+        let pomoTime = {};
+        let taskIndexMap = {};
+
+        const timerEl = document.getElementById('timer');
+        const statusEl = document.getElementById('pomo-status');
+        const startBtn = document.getElementById('start-pomo');
+        const pauseBtn = document.getElementById('pause-pomo');
+        const resetBtn = document.getElementById('reset-pomo');
+
+        const TODAY_KEY = 'today-pomos-' + new Date().toDateString();
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return mins.toString().padStart(2, '0') + ':' + secs.toString().padStart(2, '0');
+        }
+
+        function getNextIndex() {
+            return nextIndex++;
+        }
+
+        function getTaskPreview(text) {
+            const words = text.split(' ');
+            return words.slice(0, 5).join(' ').substring(0, 15) + (words.length > 5 ? '...' : '');
+        }
+
+        function updateTimerDisplay() {
+            timerEl.textContent = formatTime(timeLeft);
+        }
+
+        function updateTotalPomos() {
+            totalPomosEl.textContent = totalPomos;
+        }
+
+        function updateTodayPomos() {
+            todayPomosEl.textContent = todayPomos;
+        }
+
+        function incrementTodayPomo() {
+            todayPomos++;
+            localStorage.setItem(TODAY_KEY, todayPomos);
+            updateTodayPomos();
+        }
+
+        function disableOtherTaskButtons(taskId) {
+            Array.from(pendingList.querySelectorAll('.pomo-btn')).forEach(btn => {
+                if (btn.parentElement.parentElement.dataset.text !== taskId) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                }
+            });
+        }
+
+        function enableAllTaskButtons() {
+            Array.from(pendingList.querySelectorAll('.pomo-btn')).forEach(btn => {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            });
+        }
+
+        function startTopPomodoro() {
+            startPomodoroFromTask();
+        }
+
+        function startPomodoroFromTask(taskId = null) {
+            if (!taskId) {
+                if (currentTaskId) {
+                    taskId = currentTaskId;
+                } else {
+                    const firstTask = pendingList.querySelector('li');
+                    if (!firstTask) {
+                        alert('请先添加任务！');
+                        return;
+                    }
+                    taskId = firstTask.dataset.text;
+                }
+            }
+
+            if (isRunning && currentTaskId !== taskId) {
+                if (!confirm('当前番茄钟运行中，切换任务将停止计时？')) {
+                    return;
+                }
+                resetPomodoro();
+            }
+
+            currentTaskId = taskId;
+            timeLeft = 25 * 60;
+            updateTimerDisplay();
+
+            const preview = getTaskPreview(taskId);
+            const index = taskIndexMap[taskId];
+            pomoTaskInfo.textContent = `#${index} ${preview}`;
+            pomoTaskInfo.style.display = 'block';
+
+            isRunning = true;
+            startBtn.style.display = 'none';
+            pauseBtn.style.display = 'inline-block';
+            statusEl.textContent = '专注中';
+
+            disableOtherTaskButtons(taskId);
+
+            document.querySelectorAll('li').forEach(li => li.classList.remove('running'));
+            const taskLi = Array.from(pendingList.children).find(li => li.dataset.text === taskId);
+            if (taskLi) taskLi.classList.add('running');
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    isRunning = false;
+                    totalPomos++;
+                    incrementTodayPomo();
+                    updateTotalPomos();
+                    startBtn.style.display = 'inline-block';
+                    pauseBtn.style.display = 'none';
+                    statusEl.textContent = '完成！';
+                    pomoTaskInfo.style.display = 'none';
+                    enableAllTaskButtons();
+                    notify('🎉 番茄钟完成！休息5分钟');
+                    if (currentTaskId) {
+                        pomoTime[currentTaskId] = (pomoTime[currentTaskId] || 0) + 25 * 60;
+                        updateTaskTimeDisplay(currentTaskId);
+                    }
+                }
+            }, 1000);
+        }
+
+        function pausePomodoro() {
+            isRunning = false;
+            if (timerInterval) clearInterval(timerInterval);
+            startBtn.style.display = 'inline-block';
+            pauseBtn.style.display = 'none';
+            statusEl.textContent = '已暂停';
+            enableAllTaskButtons();
+        }
+
+        function resetPomodoro() {
+            isRunning = false;
+            if (timerInterval) clearInterval(timerInterval);
+            timeLeft = 25 * 60;
+            currentTaskId = null;
+            updateTimerDisplay();
+            startBtn.style.display = 'inline-block';
+            pauseBtn.style.display = 'none';
+            statusEl.textContent = '就绪';
+            pomoTaskInfo.style.display = 'none';
+            document.querySelectorAll('li').forEach(li => li.classList.remove('running'));
+            enableAllTaskButtons();
+        }
+
+        function notify(message) {
+            if (Notification.permission === 'granted') {
+                new Notification('星空Todo Pro', { body: message });
+            } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission();
+            }
+        }
+
+        function updateCounters() {
+            document.querySelector('#pending h2').textContent = `待完成 (${pendingList.children.length})`;
+            document.getElementById('completed-title').textContent = `已完成 (${completedList.children.length})`;
+        }
+
+        function loadTasks() {
+            try {
+                const data = JSON.parse(localStorage.getItem('todo-data') || '{}');
+                nextIndex = data.nextIndex || 1;
+                totalPomos = data.totalPomos || 0;
+                todayPomos = parseInt(localStorage.getItem(TODAY_KEY) || '0');
+                pomoTime = data.pomoTime || {};
+                taskIndexMap = data.taskIndexMap || {};
+
+                updateTotalPomos();
+                updateTodayPomos();
+
+                const tasksData = data.tasks || [];
+                tasksData.forEach(task => {
+                    if (task.completed) {
+                        addToCompleted(task.text, task.index, task.pomoSeconds || 0);
+                    } else {
+                        addToPending(task.text, task.index, task.pomoSeconds || 0);
+                    }
+                });
+            } catch (e) {
+                console.log('加载数据失败，使用默认值');
+            }
+            updateCounters();
+        }
+
+        function saveTasks() {
+            const tasks = [];
+            Array.from(pendingList.children).forEach(li => {
+                tasks.push({
+                    text: li.dataset.text, 
+                    index: parseInt(li.dataset.index), 
+                    completed: false, 
+                    pomoSeconds: parseInt(li.dataset.pomo || '0')
+                });
+            });
+            Array.from(completedList.children).forEach(li => {
+                tasks.push({
+                    text: li.dataset.text, 
+                    index: parseInt(li.dataset.index), 
+                    completed: true, 
+                    pomoSeconds: parseInt(li.dataset.pomo || '0')
+                });
+            });
+
+            const data = {
+                tasks,
+                nextIndex,
+                totalPomos,
+                pomoTime,
+                taskIndexMap
+            };
+            localStorage.setItem('todo-data', JSON.stringify(data));
+        }
+
+        function addToPending(text, index, pomoSeconds = 0) {
+            const li = document.createElement('li');
+            li.dataset.text = text;
+            li.dataset.index = index;
+            li.dataset.pomo = pomoSeconds;
+            const timeDisplay = pomoSeconds > 0 ? formatTime(pomoSeconds) : '';
+            li.innerHTML = `
+                <div style="display:flex;align-items:center;flex:1;">
+                    <span class="task-index">${index}</span>
+                    <div class="task-text">${text}</div>
+                </div>
+                <div class="task-actions">
+                    <button class="pomo-btn" onclick="startPomodoroFromTask('${text.replace(/'/g, "\'")}')">🍅</button>
+                    <span class="pomo-time">${timeDisplay}</span>
+                    <button class="complete-btn" onclick="completeTask(this.parentElement.parentElement)">✓</button>
+                    <button class="delete-btn" onclick="deleteTask(this.parentElement.parentElement)">🗑️</button>
+                </div>
+            `;
+            pendingList.appendChild(li);
+        }
+
+        function addToCompleted(text, index, pomoSeconds = 0) {
+            const li = document.createElement('li');
+            li.dataset.text = text;
+            li.dataset.index = index;
+            li.dataset.pomo = pomoSeconds;
+            const timeDisplay = pomoSeconds > 0 ? formatTime(pomoSeconds) : '';
+            li.innerHTML = `
+                <div style="display:flex;align-items:center;flex:1;">
+                    <span class="task-index">${index}</span>
+                    <div class="task-text">${text}</div>
+                </div>
+                <div class="task-actions">
+                    <span class="pomo-time">${timeDisplay}</span>
+                    <button class="delete-btn" onclick="deleteTask(this.parentElement)">🗑️</button>
+                </div>
+            `;
+            li.classList.add('completed-task');
+            completedList.appendChild(li);
+        }
+
+        function updateTaskTimeDisplay(taskId) {
+            const allLi = [...pendingList.children, ...completedList.children];
+            const li = allLi.find(li => li.dataset.text === taskId);
+            if (li) {
+                const timeSpan = li.querySelector('.pomo-time');
+                const totalSeconds = pomoTime[taskId] || 0;
+                timeSpan.textContent = formatTime(totalSeconds);
+                li.dataset.pomo = totalSeconds;
+            }
+        }
+
+        function addTask() {
+            const text = newTaskInput.value.trim();
+            if (text) {
+                const index = getNextIndex();
+                taskIndexMap[text] = index;
+                addToPending(text, index, 0);
+                newTaskInput.value = '';
+                updateCounters();
+                saveTasks();
+                newTaskInput.focus();
+            }
+        }
+
+        function completeTask(li) {
+            const text = li.dataset.text;
+            const index = parseInt(li.dataset.index);
+            const pomoSeconds = parseInt(li.dataset.pomo || '0');
+            li.remove();
+            addToCompleted(text, index, pomoSeconds);
+            updateCounters();
+            saveTasks();
+        }
+
+        function deleteTask(li) {
+            const text = li.dataset.text;
+            delete taskIndexMap[text];
+            li.remove();
+            updateCounters();
+            saveTasks();
+        }
+
+        newTaskInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addTask();
+            }
+        });
+
+        // 页面加载完成
+        window.addEventListener('load', function() {
+            loadTasks();
+            updateTimerDisplay();
+            newTaskInput.focus();
+        });
+    </script>
+</body>
+</html>
