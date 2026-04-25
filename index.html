@@ -14,6 +14,19 @@
         .container { max-width: 700px; margin: 0 auto; }
         h1 { text-align: center; font-size: 2.2em; margin-bottom: 8px; text-shadow: 0 0 20px #4facfe; }
         .lang-toggle { position: fixed; top: 20px; right: 20px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-family: 'Poppins', sans-serif; transition: all 0.3s; z-index: 100; }
+        .settings-toggle { position: fixed; top: 20px; right: 100px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-family: 'Poppins', sans-serif; transition: all 0.3s; z-index: 100; }
+        .settings-toggle:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
+        .settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 200; justify-content: center; align-items: center; }
+        .settings-modal.active { display: flex; }
+        .settings-content { background: rgba(30,30,60,0.95); backdrop-filter: blur(20px); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); max-width: 400px; width: 90%; }
+        .settings-content h3 { margin-top: 0; margin-bottom: 20px; color: #4facfe; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .setting-row label { font-size: 14px; }
+        .setting-row input { width: 80px; padding: 8px; border: none; border-radius: 8px; background: rgba(255,255,255,0.15); color: white; text-align: center; }
+        .settings-buttons { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+        .settings-buttons button { padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; transition: all 0.3s; }
+        .save-btn { background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; }
+        .cancel-btn { background: rgba(255,255,255,0.15); color: white; }
         .lang-toggle:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
         .subtitle { text-align: center; opacity: 0.8; margin-bottom: 24px; font-size: 1.1em; }
         .stats { display: flex; gap: 20px; justify-content: center; margin-bottom: 16px; font-size: 0.95em; opacity: 0.9; flex-wrap: wrap; }
@@ -59,6 +72,7 @@
     </style>
 </head>
 <body>
+    <button class="settings-toggle" onclick="openSettings()">⚙️</button>
     <button class="lang-toggle" onclick="toggleLanguage()">🌐 <span id="lang-label">EN</span></button>
     <div class="container">
         <h1>🌟 <span data-i18n="title">Star Todo Pro</span></h1>
@@ -95,6 +109,28 @@
         </div>
     </div>
 
+    <div class="settings-modal" id="settings-modal">
+        <div class="settings-content">
+            <h3 data-i18n="settings">Settings</h3>
+            <div class="setting-row">
+                <label data-i18n="workDuration">Work Duration (min):</label>
+                <input type="number" id="work-duration" min="1" max="60" value="25">
+            </div>
+            <div class="setting-row">
+                <label data-i18n="breakDuration">Break Duration (min):</label>
+                <input type="number" id="break-duration" min="1" max="30" value="5">
+            </div>
+            <div class="setting-row">
+                <label data-i18n="soundEnabled">Sound:</label>
+                <input type="checkbox" id="sound-enabled" checked>
+            </div>
+            <div class="settings-buttons">
+                <button class="cancel-btn" onclick="closeSettings()" data-i18n="cancel">Cancel</button>
+                <button class="save-btn" onclick="saveSettings()" data-i18n="save">Save</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const translations = {
             en: {
@@ -116,7 +152,13 @@
                 addTaskFirst: 'Please add a task first!',
                 confirmSwitch: 'Timer running, switching will stop it?',
                 pomoComplete: '🎉 Pomodoro complete! Take a 5min break',
-                loadFailed: 'Failed to load data, using defaults'
+                loadFailed: 'Failed to load data, using defaults',
+                settings: 'Settings',
+                workDuration: 'Work Duration (min):',
+                breakDuration: 'Break Duration (min):',
+                soundEnabled: 'Sound:',
+                save: 'Save',
+                cancel: 'Cancel'
             },
             zh: {
                 title: '星空Todo Pro',
@@ -137,7 +179,13 @@
                 addTaskFirst: '请先添加任务！',
                 confirmSwitch: '当前番茄钟运行中，切换任务将停止计时？',
                 pomoComplete: '🎉 番茄钟完成！休息5分钟',
-                loadFailed: '加载数据失败，使用默认值'
+                loadFailed: '加载数据失败，使用默认值',
+                settings: '设置',
+                workDuration: '工作时长(分钟):',
+                breakDuration: '休息时长(分钟):',
+                soundEnabled: '声音:',
+                save: '保存',
+                cancel: '取消'
             }
         };
 
@@ -186,6 +234,12 @@
         let todayPomos = 0;
         let pomoTime = {};
         let taskIndexMap = {};
+        let timerEndTime = null;
+        let isBreakMode = false;
+        let workDuration = 25 * 60;
+        let breakDuration = 5 * 60;
+        let audioContext = null;
+        let soundEnabled = true;
 
         const timerEl = document.getElementById('timer');
         const statusEl = document.getElementById('pomo-status');
@@ -270,7 +324,9 @@
             }
 
             currentTaskId = taskId;
-            timeLeft = 25 * 60;
+            isBreakMode = false;
+            timeLeft = workDuration;
+            timerEndTime = Date.now() + timeLeft * 1000;
             updateTimerDisplay();
 
             const preview = getTaskPreview(taskId);
@@ -289,10 +345,15 @@
             const taskLi = Array.from(pendingList.children).find(li => li.dataset.text === taskId);
             if (taskLi) taskLi.classList.add('running');
 
+            playSound('start');
+
             timerInterval = setInterval(() => {
-                timeLeft--;
-                updateTimerDisplay();
-                if (timeLeft <= 0) {
+                const now = Date.now();
+                const remaining = Math.ceil((timerEndTime - now) / 1000);
+                
+                if (remaining <= 0) {
+                    timeLeft = 0;
+                    updateTimerDisplay();
                     clearInterval(timerInterval);
                     isRunning = false;
                     totalPomos++;
@@ -304,27 +365,37 @@
                     pomoTaskInfo.style.display = 'none';
                     enableAllTaskButtons();
                     notify(t('pomoComplete'));
+                    playSound('complete');
                     if (currentTaskId) {
-                        pomoTime[currentTaskId] = (pomoTime[currentTaskId] || 0) + 25 * 60;
+                        pomoTime[currentTaskId] = (pomoTime[currentTaskId] || 0) + workDuration;
                         updateTaskTimeDisplay(currentTaskId);
                     }
+                    // Start break timer
+                    startBreakTimer();
+                } else {
+                    timeLeft = remaining;
+                    updateTimerDisplay();
                 }
-            }, 1000);
+            }, 100);
         }
 
         function pausePomodoro() {
             isRunning = false;
             if (timerInterval) clearInterval(timerInterval);
+            timerEndTime = null;
             startBtn.style.display = 'inline-block';
             pauseBtn.style.display = 'none';
             statusEl.textContent = t('paused');
             enableAllTaskButtons();
+            playSound('pause');
         }
 
         function resetPomodoro() {
             isRunning = false;
             if (timerInterval) clearInterval(timerInterval);
-            timeLeft = 25 * 60;
+            timerEndTime = null;
+            isBreakMode = false;
+            timeLeft = workDuration;
             currentTaskId = null;
             updateTimerDisplay();
             startBtn.style.display = 'inline-block';
@@ -341,6 +412,105 @@
             } else if (Notification.permission !== 'denied') {
                 Notification.requestPermission();
             }
+        }
+
+        function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudioContext();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            if (type === 'start') {
+                oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(440, audioContext.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } else if (type === 'pause') {
+                oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(220, audioContext.currentTime + 0.15);
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } else if (type === 'complete') {
+                // Play a pleasant chime
+                const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                frequencies.forEach((freq, i) => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    osc.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.1);
+                    gain.gain.setValueAtTime(0.3, audioContext.currentTime + i * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.1 + 0.4);
+                    osc.start(audioContext.currentTime + i * 0.1);
+                    osc.stop(audioContext.currentTime + i * 0.1 + 0.4);
+                });
+            } else if (type === 'break') {
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
+                gainNode.gain.setValueAtTime(0.25, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.4);
+            }
+        }
+
+        function startBreakTimer() {
+            isBreakMode = true;
+            timeLeft = breakDuration;
+            timerEndTime = Date.now() + timeLeft * 1000;
+            updateTimerDisplay();
+            
+            statusEl.textContent = currentLang === 'zh' ? '休息中' : 'Break';
+            pomoTaskInfo.textContent = currentLang === 'zh' ? '☕ 休息时间' : '☕ Break time';
+            pomoTaskInfo.style.display = 'block';
+            
+            isRunning = true;
+            startBtn.style.display = 'none';
+            pauseBtn.style.display = 'inline-block';
+            
+            playSound('break');
+            notify(currentLang === 'zh' ? '🎉 工作完成！休息5分钟' : '🎉 Work complete! Take a 5min break');
+            
+            timerInterval = setInterval(() => {
+                const now = Date.now();
+                const remaining = Math.ceil((timerEndTime - now) / 1000);
+                
+                if (remaining <= 0) {
+                    timeLeft = 0;
+                    updateTimerDisplay();
+                    clearInterval(timerInterval);
+                    isRunning = false;
+                    isBreakMode = false;
+                    timeLeft = workDuration;
+                    timerEndTime = null;
+                    updateTimerDisplay();
+                    startBtn.style.display = 'inline-block';
+                    pauseBtn.style.display = 'none';
+                    statusEl.textContent = t('ready');
+                    pomoTaskInfo.style.display = 'none';
+                    playSound('complete');
+                    notify(currentLang === 'zh' ? '☕ 休息结束，准备开始工作！' : '☕ Break over, ready to work!');
+                } else {
+                    timeLeft = remaining;
+                    updateTimerDisplay();
+                }
+            }, 100);
         }
 
         function updateCounters() {
@@ -493,10 +663,52 @@
             }
         });
 
+        function openSettings() {
+            document.getElementById('work-duration').value = workDuration / 60;
+            document.getElementById('break-duration').value = breakDuration / 60;
+            document.getElementById('sound-enabled').checked = soundEnabled;
+            document.getElementById('settings-modal').classList.add('active');
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').classList.remove('active');
+        }
+
+        function saveSettings() {
+            const newWorkDuration = parseInt(document.getElementById('work-duration').value) || 25;
+            const newBreakDuration = parseInt(document.getElementById('break-duration').value) || 5;
+            soundEnabled = document.getElementById('sound-enabled').checked;
+            
+            workDuration = newWorkDuration * 60;
+            breakDuration = newBreakDuration * 60;
+            
+            localStorage.setItem('work-duration', workDuration);
+            localStorage.setItem('break-duration', breakDuration);
+            localStorage.setItem('sound-enabled', soundEnabled);
+            
+            if (!isRunning) {
+                timeLeft = workDuration;
+                updateTimerDisplay();
+            }
+            
+            closeSettings();
+        }
+
         // 页面加载完成
         window.addEventListener('load', function() {
             applyLanguage();
             loadTasks();
+            
+            // Load settings
+            const savedWorkDuration = localStorage.getItem('work-duration');
+            const savedBreakDuration = localStorage.getItem('break-duration');
+            const savedSoundEnabled = localStorage.getItem('sound-enabled');
+            
+            if (savedWorkDuration) workDuration = parseInt(savedWorkDuration);
+            if (savedBreakDuration) breakDuration = parseInt(savedBreakDuration);
+            if (savedSoundEnabled !== null) soundEnabled = savedSoundEnabled === 'true';
+            
+            timeLeft = workDuration;
             updateTimerDisplay();
             newTaskInput.focus();
         });
