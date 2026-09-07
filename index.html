@@ -4,12 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌟 Star Todo Pro</title>
+    <title>Todo</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
         * { box-sizing: border-box; }
         body { font-family: 'Poppins', sans-serif; margin: 0; padding: 20px; min-height: 100vh; background: radial-gradient(2px 2px at 20px 30px, #eee, transparent), radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent), radial-gradient(1px 1px at 90px 40px, #fff, transparent), radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.6), transparent), linear-gradient(135deg, #0c0c1e 0%, #1a1a3a 50%, #2d1b69 100%); background-repeat: repeat, repeat, repeat, repeat, no-repeat; background-size: 200px 100px, 200px 100px, 200px 100px, 200px 100px, 100% 100%; background-attachment: fixed; color: #fff; overflow-x: hidden; }
-        .container { max-width: 700px; margin: 0 auto; }
+        .container { max-width: 1650px; margin: 0 auto; }
         h1 { text-align: center; font-size: 2.2em; margin-bottom: 8px; text-shadow: 0 0 20px #4facfe; }
         .lang-toggle { position: fixed; top: 20px; right: 20px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-family: 'Poppins', sans-serif; transition: all 0.3s; z-index: 100; }
         .settings-toggle { position: fixed; top: 20px; right: 100px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-family: 'Poppins', sans-serif; transition: all 0.3s; z-index: 100; }
@@ -44,11 +44,15 @@
         #pause-pomo, #reset-pomo { background: linear-gradient(135deg, #ff8e8e, #ff6b6b); color: white; box-shadow: 0 4px 12px rgba(255,107,107,0.4); }
         #pause-pomo:hover:not(:disabled), #reset-pomo:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(255,107,107,0.6); }
         button:disabled { opacity: 0.5; cursor: not-allowed !important; }
-        .section { margin-bottom: 32px; }
-        h2 { font-size: 1.6em; margin-bottom: 16px; display: flex; align-items: center; }
-        h2::before { content: '✨'; margin-right: 10px; font-size: 1.4em; }
-        #pending h2::before { color: #4facfe; }
-        #completed-title h2::before { color: #ff6b6b; }
+        .board { display: flex; gap: 24px; margin-bottom: 32px; }
+        .column { flex: 1; min-width: 0; background: rgba(255,255,255,0.04); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .column-left { border-color: rgba(79,172,254,0.3); }
+        .column-right { border-color: rgba(255,107,107,0.3); }
+        .section { margin-bottom: 20px; }
+        h2 { font-size: 1.4em; margin-bottom: 16px; display: flex; align-items: center; }
+        h2::before { content: '✨'; margin-right: 10px; font-size: 1.2em; }
+        .column-left h2::before { content: '📋'; color: #4facfe; }
+        .column-right h2::before { content: '🎯'; color: #ff6b6b; }
         ul { list-style: none; padding: 0; max-height: 400px; overflow-y: auto; }
         li { background: rgba(30,30,60,0.75); margin: 12px 0; padding: 18px; border-radius: 18px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; }
         li:hover { transform: translateX(8px); box-shadow: 0 8px 25px rgba(0,0,0,0.25); }
@@ -57,7 +61,6 @@
         .task-actions { display: flex; align-items: center; gap: 8px; }
         .pomo-time { color: #00f2fe; font-weight: 600; font-size: 0.9em; padding: 4px 10px; background: rgba(0,242,254,0.2); border-radius: 12px; }
         .running { background: rgba(255,193,7,0.25) !important; box-shadow: 0 0 25px rgba(255,193,7,0.5) !important; border-color: rgba(255,193,7,0.6) !important; }
-        .completed-task { opacity: 0.65; }
         .delete-btn { background: rgba(255,107,107,0.8); padding: 6px 12px; border-radius: 12px; font-size: 12px; transition: all 0.3s; cursor: pointer; border: none; color: white; }
         .delete-btn:hover { background: #ff6b6b; transform: scale(1.08); }
         .pomo-btn, .complete-btn { background: rgba(79,172,254,0.8); padding: 8px 14px; border-radius: 14px; color: white; border: none; cursor: pointer; transition: all 0.3s; font-size: 14px; font-weight: 500; }
@@ -66,13 +69,16 @@
         ul::-webkit-scrollbar-track { background: rgba(255,255,255,0.08); border-radius: 10px; }
         ul::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 10px; }
         ul::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.5); }
+        @media (max-width: 768px) {
+            .board { flex-direction: column; }
+        }
     </style>
 </head>
 <body>
     <button class="settings-toggle" onclick="openSettings()">⚙️</button>
     <button class="lang-toggle" onclick="toggleLanguage()">🌐 <span id="lang-label">EN</span></button>
     <div class="container">
-        <h1>🌟 <span data-i18n="title">Star Todo Pro</span></h1>
+        <h1>🌟 <span data-i18n="title">Todo</span></h1>
         <p class="subtitle" data-i18n="subtitle">Focus 25min, conquer today</p>
         <div class="stats">
             <div class="stat-item"><span data-i18n="totalPomos">Total Pomos</span> <span id="total-pomos">0</span></div>
@@ -95,14 +101,19 @@
             <button onclick="addTask()" data-i18n="add">Add</button>
         </div>
 
-        <div class="section" id="pending">
-            <h2 data-i18n="pending">Pending</h2>
-            <ul id="pending-list"></ul>
-        </div>
-
-        <div class="section">
-            <h2 id="completed-title" data-i18n="completed">Completed</h2>
-            <ul id="completed-list"></ul>
+        <div class="board">
+            <div class="column column-left">
+                <div class="section" id="long-term">
+                    <h2 data-i18n="longTerm">Long-term</h2>
+                    <ul id="longterm-list"></ul>
+                </div>
+            </div>
+            <div class="column column-right">
+                <div class="section" id="pending">
+                    <h2 data-i18n="todayTasks">Today</h2>
+                    <ul id="pending-list"></ul>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -131,7 +142,7 @@
     <script>
         const translations = {
             en: {
-                title: 'Star Todo Pro',
+                title: 'Todo',
                 subtitle: 'Focus 25min, conquer today',
                 totalPomos: 'Total Pomos',
                 today: 'Today',
@@ -140,9 +151,10 @@
                 pause: 'Pause',
                 reset: 'Reset',
                 add: 'Add',
-                inputPlaceholder: 'Enter task, press Enter to add ✨',
+                inputPlaceholder: 'Enter long-term task, press Enter to add ✨',
+                longTerm: 'Long-term',
+                todayTasks: 'Today',
                 pending: 'Pending',
-                completed: 'Completed',
                 focusing: 'Focusing',
                 paused: 'Paused',
                 completed_: 'Done!',
@@ -158,7 +170,7 @@
                 cancel: 'Cancel'
             },
             zh: {
-                title: '星空Todo Pro',
+                title: 'Todo',
                 subtitle: '专注25min，征服今日',
                 totalPomos: '总番茄',
                 today: '今日',
@@ -167,9 +179,10 @@
                 pause: '暂停',
                 reset: '重置',
                 add: '添加',
-                inputPlaceholder: '输入今日任务，按Enter添加 ✨',
+                inputPlaceholder: '输入长期任务，按Enter添加 ✨',
+                longTerm: '长期任务',
+                todayTasks: '今日任务',
                 pending: '待完成',
-                completed: '已完成',
                 focusing: '专注中',
                 paused: '已暂停',
                 completed_: '完成！',
@@ -216,7 +229,7 @@
         }
 
         const pendingList = document.getElementById('pending-list');
-        const completedList = document.getElementById('completed-list');
+        const longTermList = document.getElementById('longterm-list');
         const newTaskInput = document.getElementById('new-task');
         const totalPomosEl = document.getElementById('total-pomos');
         const todayPomosEl = document.getElementById('today-pomos');
@@ -405,7 +418,7 @@
 
         function notify(message) {
             if (Notification.permission === 'granted') {
-                new Notification('星空Todo Pro', { body: message });
+                new Notification('Todo', { body: message });
             } else if (Notification.permission !== 'denied') {
                 Notification.requestPermission();
             }
@@ -511,8 +524,8 @@
         }
 
         function updateCounters() {
-            document.querySelector('#pending h2').textContent = `${t('pending')} (${pendingList.children.length})`;
-            document.getElementById('completed-title').textContent = `${t('completed')} (${completedList.children.length})`;
+            document.querySelector('#long-term h2').textContent = `${t('longTerm')} (${longTermList.children.length})`;
+            document.querySelector('#pending h2').textContent = `${t('todayTasks')} (${pendingList.children.length})`;
         }
 
         function loadTasks() {
@@ -530,7 +543,9 @@
                 const tasksData = data.tasks || [];
                 tasksData.forEach(task => {
                     if (task.completed) {
-                        addToCompleted(task.text, task.index, task.pomoSeconds || 0);
+                        return;
+                    } else if (task.longTerm) {
+                        addToLongTerm(task.text, task.index, task.pomoSeconds || 0);
                     } else {
                         addToPending(task.text, task.index, task.pomoSeconds || 0);
                     }
@@ -543,19 +558,21 @@
 
         function saveTasks() {
             const tasks = [];
+            Array.from(longTermList.children).forEach(li => {
+                tasks.push({
+                    text: li.dataset.text, 
+                    index: parseInt(li.dataset.index), 
+                    completed: false, 
+                    longTerm: true, 
+                    pomoSeconds: parseInt(li.dataset.pomo || '0')
+                });
+            });
             Array.from(pendingList.children).forEach(li => {
                 tasks.push({
                     text: li.dataset.text, 
                     index: parseInt(li.dataset.index), 
                     completed: false, 
-                    pomoSeconds: parseInt(li.dataset.pomo || '0')
-                });
-            });
-            Array.from(completedList.children).forEach(li => {
-                tasks.push({
-                    text: li.dataset.text, 
-                    index: parseInt(li.dataset.index), 
-                    completed: true, 
+                    longTerm: false, 
                     pomoSeconds: parseInt(li.dataset.pomo || '0')
                 });
             });
@@ -570,7 +587,7 @@
             localStorage.setItem('todo-data', JSON.stringify(data));
         }
 
-        function addToPending(text, index, pomoSeconds = 0) {
+        function addToLongTerm(text, index, pomoSeconds = 0, toTop = false) {
             const li = document.createElement('li');
             li.dataset.text = text;
             li.dataset.index = index;
@@ -584,14 +601,38 @@
                 <div class="task-actions">
                     <button class="pomo-btn" onclick="startPomodoroFromTask('${text.replace(/'/g, "\'")}')">🍅</button>
                     <span class="pomo-time">${timeDisplay}</span>
-                    <button class="complete-btn" onclick="completeTask(this.parentElement.parentElement)">✓</button>
+                    <button class="complete-btn" onclick="moveToToday(this.parentElement.parentElement)">➡️</button>
                     <button class="delete-btn" onclick="deleteTask(this.parentElement.parentElement)">🗑️</button>
                 </div>
             `;
-            pendingList.appendChild(li);
+            if (toTop) {
+                longTermList.prepend(li);
+            } else {
+                longTermList.appendChild(li);
+            }
         }
 
-        function addToCompleted(text, index, pomoSeconds = 0) {
+        function moveToToday(li) {
+            const text = li.dataset.text;
+            const index = parseInt(li.dataset.index);
+            const pomoSeconds = parseInt(li.dataset.pomo || '0');
+            li.remove();
+            addToPending(text, index, pomoSeconds, true);
+            updateCounters();
+            saveTasks();
+        }
+
+        function moveToLongTerm(li) {
+            const text = li.dataset.text;
+            const index = parseInt(li.dataset.index);
+            const pomoSeconds = parseInt(li.dataset.pomo || '0');
+            li.remove();
+            addToLongTerm(text, index, pomoSeconds, true);
+            updateCounters();
+            saveTasks();
+        }
+
+        function addToPending(text, index, pomoSeconds = 0, toTop = false) {
             const li = document.createElement('li');
             li.dataset.text = text;
             li.dataset.index = index;
@@ -603,16 +644,21 @@
                     <div class="task-text">${text}</div>
                 </div>
                 <div class="task-actions">
+                    <button class="pomo-btn" onclick="startPomodoroFromTask('${text.replace(/'/g, "\'")}')">🍅</button>
                     <span class="pomo-time">${timeDisplay}</span>
-                    <button class="delete-btn" onclick="deleteTask(this.parentElement)">🗑️</button>
+                    <button class="complete-btn" onclick="moveToLongTerm(this.parentElement.parentElement)">⬅️</button>
+                    <button class="delete-btn" onclick="deleteTask(this.parentElement.parentElement)">🗑️</button>
                 </div>
             `;
-            li.classList.add('completed-task');
-            completedList.appendChild(li);
+            if (toTop) {
+                pendingList.prepend(li);
+            } else {
+                pendingList.appendChild(li);
+            }
         }
 
         function updateTaskTimeDisplay(taskId) {
-            const allLi = [...pendingList.children, ...completedList.children];
+            const allLi = [...longTermList.children, ...pendingList.children];
             const li = allLi.find(li => li.dataset.text === taskId);
             if (li) {
                 const timeSpan = li.querySelector('.pomo-time');
@@ -627,22 +673,12 @@
             if (text) {
                 const index = getNextIndex();
                 taskIndexMap[text] = index;
-                addToPending(text, index, 0);
+                addToLongTerm(text, index, 0, true);
                 newTaskInput.value = '';
                 updateCounters();
                 saveTasks();
                 newTaskInput.focus();
             }
-        }
-
-        function completeTask(li) {
-            const text = li.dataset.text;
-            const index = parseInt(li.dataset.index);
-            const pomoSeconds = parseInt(li.dataset.pomo || '0');
-            li.remove();
-            addToCompleted(text, index, pomoSeconds);
-            updateCounters();
-            saveTasks();
         }
 
         function deleteTask(li) {
